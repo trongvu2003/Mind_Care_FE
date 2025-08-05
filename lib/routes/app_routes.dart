@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../views/intro2_screen.dart';
 import '../views/intro_screen.dart';
+import '../views/register_screen.dart';
 import '../views/start_screen.dart';
 class AppRoutes {
   static const String intro = '/';
@@ -25,8 +26,8 @@ class AppRoutes {
           return MaterialPageRoute(builder: (_) => const StartScreen());
         // case login:
         //   return MaterialPageRoute(builder: (_) => const LoginScreen());
-        // case register:
-        //   return MaterialPageRoute(builder: (_) => const LoginScreen());
+        case register:
+          return MaterialPageRoute(builder: (_) => const RegisterScreen());
     // case home:
       //   return MaterialPageRoute(builder: (_) => const HomeScreen());
       // case journal:
