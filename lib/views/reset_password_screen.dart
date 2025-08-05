@@ -1,25 +1,45 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 
-class ForgotPasswordScreen extends StatefulWidget {
-  const ForgotPasswordScreen({super.key});
+class ResetPasswordScreen extends StatefulWidget {
+  const ResetPasswordScreen({super.key});
 
   @override
-  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  final TextEditingController _emailController = TextEditingController();
+class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+
+  bool _obscurePassword = true;
 
   void _submit() {
-    final email = _emailController.text.trim();
-    if (email.isEmpty || !email.contains("@")) {
+    final newPassword = _newPasswordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (newPassword.isEmpty || confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Vui lòng nhập email hợp lệ")),
+        const SnackBar(content: Text('Vui lòng nhập đầy đủ mật khẩu')),
       );
       return;
     }
-    Navigator.pushNamed(context, '/resetsuccess');
+
+    if (newPassword != confirmPassword) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Mật khẩu không khớp')));
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Mật khẩu phải ít nhất 6 ký tự')),
+      );
+      return;
+    }
+    Navigator.pushNamed(context, '/login');
   }
 
   @override
@@ -40,7 +60,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     onPressed: () => Navigator.pop(context),
                   ),
                   const Text(
-                    "Quên mật khẩu",
+                    "Cài đặt lại\nmật khẩu",
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -54,23 +74,54 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  "Email",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.black.withOpacity(0.7),
-                  ),
+                  "Mật khẩu mới",
+                  style: TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
               const SizedBox(height: 8),
               TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
+                controller: _newPasswordController,
+                obscureText: _obscurePassword,
                 decoration: const InputDecoration(
-                  hintText: "Email của bạn",
+                  hintText: "Nhập mật khẩu mới",
                   border: OutlineInputBorder(),
                 ),
               ),
-              const SizedBox(height: 32),
+
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Nhập lại mật khẩu mới",
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _confirmPasswordController,
+                obscureText: _obscurePassword,
+                decoration: const InputDecoration(
+                  hintText: "Xác nhận lại mật khẩu",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  onTap: () => Navigator.pushNamed(context, '/forgotpassword'),
+                  child: const Text(
+                    "Quên mật khẩu",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -83,16 +134,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ),
                   ),
                   child: const Text(
-                    "TIẾP TỤC",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.white,
-                    ),
+                    "ĐĂNG NHẬP",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,color: AppColors.white),
                   ),
                 ),
               ),
+
               const Spacer(),
+
               GestureDetector(
                 onTap: () => Navigator.pushNamed(context, '/register'),
                 child: const Padding(

@@ -5,6 +5,7 @@ import '../views/intro2_screen.dart';
 import '../views/intro_screen.dart';
 import '../views/register_screen.dart';
 import '../views/register_success_screen.dart';
+import '../views/reset_password_screen.dart';
 import '../views/signin_screen.dart';
 import '../views/start_screen.dart';
 
@@ -17,6 +18,7 @@ class AppRoutes {
   static const String register = '/register';
   static const String home = '/home';
   static const String forgotpassword = '/forgotpassword';
+  static const String resetsuccess = '/resetsuccess';
   static const String journal = '/journal';
   static const String suggestion = '/suggestion';
   static const String stats = '/stats';
@@ -38,6 +40,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const RegisterSuccessScreen());
       case forgotpassword:
         return MaterialPageRoute(builder: (_) => const ForgotPasswordScreen());
+      case resetsuccess:
+        return MaterialPageRoute(builder: (_) => const ResetPasswordScreen());
       // case home:
       //   return MaterialPageRoute(builder: (_) => const HomeScreen());
       // case journal:
