@@ -26,7 +26,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _register() {
     if (_formKey.currentState!.validate()) {
-      Navigator.pushNamed(context, '/home');
+      Navigator.pushNamed(context, '/registersuccessscreen');
     }
   }
 

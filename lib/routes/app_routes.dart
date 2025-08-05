@@ -3,13 +3,16 @@ import 'package:flutter/material.dart';
 import '../views/intro2_screen.dart';
 import '../views/intro_screen.dart';
 import '../views/register_screen.dart';
+import '../views/register_success_screen.dart';
 import '../views/signin_screen.dart';
 import '../views/start_screen.dart';
+
 class AppRoutes {
   static const String intro = '/';
   static const String intro2 = '/intro2';
   static const String startscreen = '/startscreen';
   static const String signinscreen = '/signinscreen';
+  static const String registersuccessscreen = '/registersuccessscreen';
   static const String register = '/register';
   static const String home = '/home';
   static const String journal = '/journal';
@@ -19,17 +22,19 @@ class AppRoutes {
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
-        case intro:
-          return MaterialPageRoute(builder: (_) => const IntroScreen());
-        case intro2:
-          return MaterialPageRoute(builder: (_) => const Intro2Screen());
-        case startscreen:
-          return MaterialPageRoute(builder: (_) => const StartScreen());
-        case signinscreen:
-          return MaterialPageRoute(builder: (_) => const SignInScreen());
-        case register:
-          return MaterialPageRoute(builder: (_) => const RegisterScreen());
-    // case home:
+      case intro:
+        return MaterialPageRoute(builder: (_) => const IntroScreen());
+      case intro2:
+        return MaterialPageRoute(builder: (_) => const Intro2Screen());
+      case startscreen:
+        return MaterialPageRoute(builder: (_) => const StartScreen());
+      case signinscreen:
+        return MaterialPageRoute(builder: (_) => const SignInScreen());
+      case register:
+        return MaterialPageRoute(builder: (_) => const RegisterScreen());
+      case registersuccessscreen:
+        return MaterialPageRoute(builder: (_) => const RegisterSuccessScreen());
+      // case home:
       //   return MaterialPageRoute(builder: (_) => const HomeScreen());
       // case journal:
       //   return MaterialPageRoute(builder: (_) => const JournalScreen());
@@ -41,9 +46,10 @@ class AppRoutes {
       //   return MaterialPageRoute(builder: (_) => const ProfileScreen());
       default:
         return MaterialPageRoute(
-          builder: (_) => const Scaffold(
-            body: Center(child: Text('Không tìm thấy trang')),
-          ),
+          builder:
+              (_) => const Scaffold(
+                body: Center(child: Text('Không tìm thấy trang')),
+              ),
         );
     }
   }
