@@ -71,6 +71,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         alignment: Alignment.centerRight,
                         child: TextButton(
                           onPressed: () {
+                            Navigator.pushNamed(context, '/forgotpassword');
                           },
                           child: const Text(
                             "Quên mật khẩu",

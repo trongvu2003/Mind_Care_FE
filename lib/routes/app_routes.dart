@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../views/forgot_password.dart';
 import '../views/intro2_screen.dart';
 import '../views/intro_screen.dart';
 import '../views/register_screen.dart';
@@ -15,6 +16,7 @@ class AppRoutes {
   static const String registersuccessscreen = '/registersuccessscreen';
   static const String register = '/register';
   static const String home = '/home';
+  static const String forgotpassword = '/forgotpassword';
   static const String journal = '/journal';
   static const String suggestion = '/suggestion';
   static const String stats = '/stats';
@@ -34,6 +36,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const RegisterScreen());
       case registersuccessscreen:
         return MaterialPageRoute(builder: (_) => const RegisterSuccessScreen());
+      case forgotpassword:
+        return MaterialPageRoute(builder: (_) => const ForgotPasswordScreen());
       // case home:
       //   return MaterialPageRoute(builder: (_) => const HomeScreen());
       // case journal:
