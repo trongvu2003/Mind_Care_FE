@@ -63,7 +63,7 @@ class StartScreen extends StatelessWidget {
                           ),
                         ),
                         onPressed: () {
-                          Navigator.pushNamed(context, '/login');
+                          Navigator.pushNamed(context, '/signinscreen');
                         },
                         child: const Text(
                           "ĐĂNG NHẬP",

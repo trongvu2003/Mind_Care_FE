@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import '../views/intro2_screen.dart';
 import '../views/intro_screen.dart';
 import '../views/register_screen.dart';
+import '../views/signin_screen.dart';
 import '../views/start_screen.dart';
 class AppRoutes {
   static const String intro = '/';
   static const String intro2 = '/intro2';
   static const String startscreen = '/startscreen';
-  static const String login = '/login';
+  static const String signinscreen = '/signinscreen';
   static const String register = '/register';
   static const String home = '/home';
   static const String journal = '/journal';
@@ -24,8 +25,8 @@ class AppRoutes {
           return MaterialPageRoute(builder: (_) => const Intro2Screen());
         case startscreen:
           return MaterialPageRoute(builder: (_) => const StartScreen());
-        // case login:
-        //   return MaterialPageRoute(builder: (_) => const LoginScreen());
+        case signinscreen:
+          return MaterialPageRoute(builder: (_) => const SignInScreen());
         case register:
           return MaterialPageRoute(builder: (_) => const RegisterScreen());
     // case home:

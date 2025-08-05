@@ -110,7 +110,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 16),
                 Center(
                   child: GestureDetector(
-                    onTap: () => Navigator.pushNamed(context, '/login'),
+                    onTap: () => Navigator.pushNamed(context, '/signinscreen'),
                     child: const Text.rich(
                       TextSpan(
                         text: 'Đã có tài khoản? ',
