@@ -94,6 +94,29 @@ class _SignInScreenState extends State<SignInScreen> {
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,color: AppColors.white),
                         ),
                       ),
+                      SizedBox(height: 30,),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: (){},
+                          icon: Image.asset(
+                            'assets/images/google.png',
+                            height: 20,
+                            width: 20,
+                          ),
+                          label: const Text(
+                            "Tiếp tục với Google",
+                            style: TextStyle(color: Colors.black),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: AppColors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                          ),
+                        ),
+                      )
                     ],
                   ),
                 ),

@@ -139,7 +139,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   ),
                 ),
               ),
-
+              const SizedBox(height: 20),
               const Spacer(),
 
               GestureDetector(
