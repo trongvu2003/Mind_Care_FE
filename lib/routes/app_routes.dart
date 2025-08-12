@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../views/forgot_password.dart';
+import '../views/home.dart';
 import '../views/intro2_screen.dart';
 import '../views/intro_screen.dart';
 import '../views/register_screen.dart';
@@ -42,8 +43,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const ForgotPasswordScreen());
       case resetsuccess:
         return MaterialPageRoute(builder: (_) => const ResetPasswordScreen());
-      // case home:
-      //   return MaterialPageRoute(builder: (_) => const HomeScreen());
+      case home:
+        return MaterialPageRoute(builder: (_) => const HomeScreen());
       // case journal:
       //   return MaterialPageRoute(builder: (_) => const JournalScreen());
       // case suggestion:
