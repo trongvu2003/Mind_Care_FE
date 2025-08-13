@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../theme/app_colors.dart';
+import '../view_models/sign_in_viewmodel.dart';
+
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -9,20 +12,46 @@ class SignInScreen extends StatefulWidget {
 }
 class _SignInScreenState extends State<SignInScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
   void _togglePassword() {
     setState(() => _obscurePassword = !_obscurePassword);
   }
-  void _login() {
+  void _login() async {
     if (_formKey.currentState!.validate()) {
-      Navigator.pushNamed(context, '/home');
+      final viewModel = context.read<SignInViewModel>();
+      await viewModel.signInWithEmail(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
+
+      // kiểm tra kết quả
+      if (viewModel.user != null && context.mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
+      } else if (viewModel.error != null && viewModel.error!.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(viewModel.error!)),
+        );
+      }
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
+    final viewModel = context.watch<SignInViewModel>();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (viewModel.error != null && viewModel.error!.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(viewModel.error!)),
+        );
+      }
+      if (viewModel.user != null) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    });
     return Scaffold(
       backgroundColor: AppColors.white,
       body: SafeArea(
@@ -59,8 +88,8 @@ class _SignInScreenState extends State<SignInScreen> {
                       _buildTextField(
                         label: "Email",
                         hint: "Email của bạn",
-                        controller: _phoneController,
-                        keyboardType: TextInputType.phone,
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
                       ),
                       _buildPasswordField(
                         label: "Mật khẩu",
@@ -98,13 +127,24 @@ class _SignInScreenState extends State<SignInScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(
-                          onPressed: (){},
+                          onPressed: viewModel.isLoading ? null : () async {
+                            await viewModel.signInWithGoogle();
+                            if (viewModel.user != null && context.mounted) {
+                              Navigator.pushReplacementNamed(context, '/home');
+                            }
+                          },
                           icon: Image.asset(
                             'assets/images/google.png',
                             height: 20,
                             width: 20,
                           ),
-                          label: const Text(
+                          label: viewModel.isLoading
+                              ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                              : const Text(
                             "Tiếp tục với Google",
                             style: TextStyle(color: Colors.black),
                           ),

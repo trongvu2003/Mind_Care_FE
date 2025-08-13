@@ -1,5 +1,9 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:mind_mare_fe/services/auth_service.dart';
+import 'package:mind_mare_fe/view_models/RegisterViewModel.dart';
+import 'package:mind_mare_fe/view_models/sign_in_viewmodel.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'routes/app_routes.dart';
 
@@ -8,7 +12,20 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MindCareApp());
+
+  runApp(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(
+            create: (_) => SignInViewModel(AuthService()),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => RegisterViewModel(),
+          ),
+        ],
+        child: const MindCareApp(),
+      )
+  );
 }
 
 class MindCareApp extends StatelessWidget {

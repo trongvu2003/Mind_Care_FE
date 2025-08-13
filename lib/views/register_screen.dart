@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../theme/app_colors.dart';
+import '../view_models/RegisterViewModel.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -24,14 +26,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _obscurePassword = !_obscurePassword);
   }
 
-  void _register() {
-    if (_formKey.currentState!.validate()) {
-      Navigator.pushNamed(context, '/registersuccessscreen');
+  Future<void> _register() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final vm = context.read<RegisterViewModel>();
+
+    final error = await vm.register(
+      name: _nameController.text,
+      email: _emailController.text,
+      phone: _phoneController.text,
+      password: _passwordController.text,
+      confirmPassword: _confirmPasswordController.text,
+    );
+
+    if (error != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error)));
+    } else {
+      Navigator.pushReplacementNamed(context, '/registersuccessscreen');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final vm = context.watch<RegisterViewModel>();
     return Scaffold(
       backgroundColor: AppColors.white,
       body: SafeArea(
@@ -96,15 +115,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       borderRadius: BorderRadius.circular(25),
                     ),
                   ),
-                  onPressed: _register,
-                  child: const Text(
-                    "ĐĂNG KÝ",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  onPressed: vm.isLoading ? null : _register,
+                  child:
+                      vm.isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
+                            "ĐĂNG KÝ",
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: AppColors.white,
+                            ),
+                          ),
                 ),
 
                 const SizedBox(height: 16),
@@ -156,11 +177,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
               hintText: hint,
               border: const OutlineInputBorder(),
             ),
-            validator:
-                (value) =>
-                    (value == null || value.isEmpty)
-                        ? 'Vui lòng nhập $label'
-                        : null,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Vui lòng nhập $label';
+              }
+              // Kiểm tra số điện thoại Việt Nam
+              if (label.toLowerCase().contains('số điện thoại')) {
+                final phoneRegExp = RegExp(r'^(0[3|5|7|8|9])[0-9]{8}$');
+                if (!phoneRegExp.hasMatch(value)) {
+                  return 'Số điện thoại không hợp lệ';
+                }
+              }
+              // Kiểm tra email
+              if (label.toLowerCase().contains('email')) {
+                final emailRegExp = RegExp(
+                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                if (!emailRegExp.hasMatch(value)) {
+                  return 'Email không hợp lệ';
+                }
+              }
+              return null;
+            },
           ),
         ],
       ),
