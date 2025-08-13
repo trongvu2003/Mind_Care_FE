@@ -44,7 +44,7 @@ class AppRoutes {
       case resetsuccess:
         return MaterialPageRoute(builder: (_) => const ResetPasswordScreen());
       case home:
-        return MaterialPageRoute(builder: (_) => const HomeScreen());
+        return MaterialPageRoute(builder: (_) =>  MindCareHomePage());
       // case journal:
       //   return MaterialPageRoute(builder: (_) => const JournalScreen());
       // case suggestion:
