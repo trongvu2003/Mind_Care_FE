@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../view_models/UserViewModel.dart';
 import '../widgets/custom_bottom_navigation.dart';
 import 'main_screen/NotificationsPage.dart';
-import 'main_screen/profile_page.dart';
+import 'main_screen/ProfileScreen.dart';
 import 'main_screen/statistics_page.dart';
 import 'main_screen/suggestions_page.dart';
 
@@ -17,15 +17,20 @@ class MindCareHomePage extends StatefulWidget {
 class _MindCareHomePageState extends State<MindCareHomePage> {
   int _selectedIndex = 0;
   final TextEditingController _messageController = TextEditingController();
+  final user = FirebaseAuth.instance.currentUser;
+  late List<Widget> _pages;
 
-  // Danh sách các màn hình
-  final List<Widget> _pages = [
-    HomePage(),
-    SuggestionsPage(),
-    StatisticsPage(),
-    NotificationsPage(),
-    ProfilePage(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      HomePage(),
+      SuggestionsPage(),
+      StatisticsPage(),
+      NotificationsPage(),
+      Profilescreen(uid: user?.uid ?? ""),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
