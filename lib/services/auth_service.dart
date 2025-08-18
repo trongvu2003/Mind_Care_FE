@@ -35,7 +35,6 @@ class AuthService {
       appUser.toMap(),
       SetOptions(merge: true),
     );
-
     return appUser;
   }
 
@@ -64,5 +63,8 @@ class AuthService {
     });
 
     return appUser;
+  }
+  Future<void> signOut() async {
+    await _auth.signOut();
   }
 }

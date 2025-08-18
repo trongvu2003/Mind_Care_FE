@@ -35,4 +35,10 @@ class SignInViewModel extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> signOut() async {
+    await _authService.signOut();
+    user = null;
+    notifyListeners();
+  }
 }

@@ -9,4 +9,5 @@ class AppColors {
   static const Color title = Color(0xFFCDCF2B);
   static const Color white = Colors.white;
   static const Color black = Colors.black;
+  static const Color red = Colors.red;
 }

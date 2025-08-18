@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mind_mare_fe/theme/app_colors.dart';
+import 'package:provider/provider.dart';
 
 import '../../models/user_model.dart';
 import '../../view_models/UserViewModel.dart';
+import '../../view_models/sign_in_viewmodel.dart';
 
 class Profilescreen extends StatefulWidget {
-  final String uid; // uid từ FirebaseAuth
+  final String uid;
 
   const Profilescreen({super.key, required this.uid});
 
@@ -73,7 +75,7 @@ class _Profilescreen extends State<Profilescreen> {
         IconButton(
           icon: const Icon(Icons.settings, color: Colors.black),
           tooltip: 'Cài đặt',
-          onPressed: () {},
+          onPressed: () => _showSettings(context),
         ),
       ],
     );
@@ -241,6 +243,76 @@ class _Profilescreen extends State<Profilescreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showSettings(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: const Text("Chỉnh sửa trang cá nhân"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/editProfile');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text("Đăng xuất"),
+              onTap: () {
+                _showLogoutDialog(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Center(
+            child: Text(
+              "Đăng xuất",
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          content: Text("Bạn có chắc muốn đăng xuất?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.white,
+                backgroundColor: AppColors.text,
+              ),
+              child: Text("Hủy"),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.white,
+                backgroundColor: AppColors.red,
+              ),
+              onPressed: () async {
+                await dialogContext.read<SignInViewModel>().signOut();
+                if (context.mounted) {
+                  Navigator.pushReplacementNamed(context, '/signinscreen');
+                }
+              },
+              child: Text("Đăng xuất"),
+            ),
+          ],
+        );
+      },
     );
   }
 }
