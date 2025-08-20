@@ -1,7 +1,9 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mind_mare_fe/services/auth_service.dart';
 import 'package:mind_mare_fe/view_models/RegisterViewModel.dart';
+import 'package:mind_mare_fe/view_models/UserViewModel.dart';
 import 'package:mind_mare_fe/view_models/sign_in_viewmodel.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
@@ -9,6 +11,7 @@ import 'routes/app_routes.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -21,6 +24,9 @@ Future<void> main() async {
           ),
           ChangeNotifierProvider(
             create: (_) => RegisterViewModel(),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => UserViewModel(),
           ),
         ],
         child: const MindCareApp(),

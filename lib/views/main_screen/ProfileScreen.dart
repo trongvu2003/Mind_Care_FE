@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mind_mare_fe/theme/app_colors.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/user_model.dart';
@@ -20,6 +24,7 @@ class _Profilescreen extends State<Profilescreen> {
   final UserViewModel _viewModel = UserViewModel();
   AppUser? _user;
   bool _isLoading = true;
+  File? _avatarImage;
 
   @override
   void initState() {
@@ -39,6 +44,57 @@ class _Profilescreen extends State<Profilescreen> {
         _isLoading = false;
       });
       debugPrint("Lỗi khi load user: $e");
+    }
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      PermissionStatus storageStatus = PermissionStatus.denied;
+      PermissionStatus photosStatus = PermissionStatus.denied;
+
+      if (Platform.isAndroid) {
+        storageStatus = await Permission.storage.request();
+      }
+
+      photosStatus = await Permission.photos.request();
+
+      if (storageStatus.isGranted || photosStatus.isGranted) {
+        final picker = ImagePicker();
+        final pickedFile = await picker.pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 800,
+          maxHeight: 800,
+          imageQuality: 85,
+        );
+
+        if (pickedFile != null && mounted) {
+          setState(() {
+            _avatarImage = File(pickedFile.path);
+          });
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Vui lòng cấp quyền truy cập để chọn ảnh'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        if (storageStatus.isPermanentlyDenied ||
+            photosStatus.isPermanentlyDenied) {
+          await openAppSettings();
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi chọn ảnh: $e'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
@@ -67,6 +123,7 @@ class _Profilescreen extends State<Profilescreen> {
       backgroundColor: AppColors.text,
       elevation: 0,
       centerTitle: true,
+      automaticallyImplyLeading: false,
       title: const Text(
         "Thông tin cá nhân",
         style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
@@ -218,7 +275,9 @@ class _Profilescreen extends State<Profilescreen> {
                     image:
                         _user!.avatarUrl.isNotEmpty
                             ? NetworkImage(_user!.avatarUrl)
-                            : "" as ImageProvider,
+                            : const AssetImage(
+                              "assets/images/default_avatar.png",
+                            ),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -228,16 +287,21 @@ class _Profilescreen extends State<Profilescreen> {
           Positioned(
             bottom: 0,
             right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                color: AppColors.text,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.camera_alt,
-                color: Colors.white,
-                size: 20,
+            child: GestureDetector(
+              onTap: () {
+                _pickImage();
+              },
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: AppColors.text,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.camera_alt,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
             ),
           ),
@@ -258,9 +322,18 @@ class _Profilescreen extends State<Profilescreen> {
             ListTile(
               leading: const Icon(Icons.edit),
               title: const Text("Chỉnh sửa trang cá nhân"),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context);
-                Navigator.pushNamed(context, '/editProfile');
+                final result = await Navigator.pushNamed(
+                  context,
+                  '/editProfile',
+                );
+
+                if (result == true) {
+                  setState(() {
+                    _loadUser();
+                  });
+                }
               },
             ),
             ListTile(

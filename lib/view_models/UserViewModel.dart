@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../services/user_repository.dart';
@@ -18,4 +19,25 @@ class UserViewModel extends ChangeNotifier {
       notifyListeners();
     }
   }
+  Future<void> updateUserInfo({
+    required String name,
+    required String email,
+    required String phone,
+    String? avatarUrl,
+  }) async {
+    if (user == null) return;
+
+    final updatedUser = user!.copyWith(
+      name: name,
+      email: email,
+      phone: phone,
+      avatarUrl: avatarUrl ?? user!.avatarUrl,
+      lastLogin: DateTime.now(),
+    );
+
+    await _repository.updateUser(updatedUser); // cập nhật lên Firestore
+    user = updatedUser;
+    notifyListeners();
+  }
+
 }

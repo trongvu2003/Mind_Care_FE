@@ -4,6 +4,8 @@ import '../views/forgot_password.dart';
 import '../views/home.dart';
 import '../views/intro2_screen.dart';
 import '../views/intro_screen.dart';
+import '../views/main_screen/ChatAI.dart';
+import '../views/main_screen/EditProfileScreen.dart';
 import '../views/register_screen.dart';
 import '../views/register_success_screen.dart';
 import '../views/reset_password_screen.dart';
@@ -24,6 +26,8 @@ class AppRoutes {
   static const String suggestion = '/suggestion';
   static const String stats = '/stats';
   static const String profile = '/profile';
+  static const String editprofile = '/editProfile';
+  static const String AIchatRoom = '/aichatroom';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -44,7 +48,13 @@ class AppRoutes {
       case resetsuccess:
         return MaterialPageRoute(builder: (_) => const ResetPasswordScreen());
       case home:
-        return MaterialPageRoute(builder: (_) =>  MindCareHomePage());
+        return MaterialPageRoute(builder: (_) => MindCareHomePage());
+      case editprofile:
+        return MaterialPageRoute(builder: (_) => const EditProfileScreen());
+      case AIchatRoom:
+        return MaterialPageRoute(builder: (_) => const AichatRoom());
+      // case home:
+      //   return MaterialPageRoute(builder: (_) => const HomeScreen());
       // case journal:
       //   return MaterialPageRoute(builder: (_) => const JournalScreen());
       // case suggestion:

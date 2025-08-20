@@ -19,9 +19,9 @@ class AppUser {
     this.lastLogin,
   });
 
-  factory AppUser.fromMap(Map<String, dynamic> map) {
+  factory AppUser.fromMap(String uid, Map<String, dynamic> map) {
     return AppUser(
-      uid: map['uid'] ?? '',
+      uid: uid,
       name: map['name'] ?? '',
       email: map['email'] ?? '',
       phone: map['phone'] ?? '',
@@ -49,5 +49,25 @@ class AppUser {
           ? Timestamp.fromDate(lastLogin!)
           : FieldValue.serverTimestamp(),
     };
+  }
+  // copyWith để update từng trường
+  AppUser copyWith({
+    String? uid,
+    String? name,
+    String? email,
+    String? phone,
+    String? avatarUrl,
+    DateTime? createdAt,
+    DateTime? lastLogin,
+  }) {
+    return AppUser(
+      uid: uid ?? this.uid,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      createdAt: createdAt ?? this.createdAt,
+      lastLogin: lastLogin ?? this.lastLogin,
+    );
   }
 }

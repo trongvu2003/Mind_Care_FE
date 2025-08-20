@@ -20,21 +20,35 @@ class AuthService {
     final userCredential = await _auth.signInWithCredential(credential);
     final user = userCredential.user;
     if (user == null) return null;
+    final userDoc = await _firestore.collection('users').doc(user.uid).get();
+    String avatarUrl = user.photoURL ?? '';
+    String phone = user.phoneNumber ?? '';
+    String name = user.displayName ?? '';
+    String email = user.email ?? '';
+
+    if (userDoc.exists) {
+      final data = userDoc.data()!;
+      name = (data['name'] ?? '').isNotEmpty ? data['name'] : name;
+      email = (data['email'] ?? '').isNotEmpty ? data['email'] : email;
+      avatarUrl =
+          (data['avatarUrl'] ?? '').isNotEmpty ? data['avatarUrl'] : avatarUrl;
+      phone = (data['phone'] ?? '').isNotEmpty ? data['phone'] : phone;
+    }
 
     final appUser = AppUser(
       uid: user.uid,
-      name: user.displayName ?? '',
-      email: user.email ?? '',
-      phone: user.phoneNumber ?? '',
-      avatarUrl: user.photoURL ?? '',
+      name: name,
+      email: email,
+      phone: phone,
+      avatarUrl: avatarUrl,
       createdAt: DateTime.now(),
       lastLogin: DateTime.now(),
     );
 
-    await _firestore.collection('users').doc(user.uid).set(
-      appUser.toMap(),
-      SetOptions(merge: true),
-    );
+    await _firestore
+        .collection('users')
+        .doc(user.uid)
+        .set(appUser.toMap(), SetOptions(merge: true));
     return appUser;
   }
 
@@ -64,7 +78,14 @@ class AuthService {
 
     return appUser;
   }
+
   Future<void> signOut() async {
     await _auth.signOut();
+  }
+
+  User? get currentUser => _auth.currentUser;
+
+  Future<void> updatePassword(String newPassword) async {
+    await _auth.currentUser?.updatePassword(newPassword);
   }
 }
