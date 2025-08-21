@@ -1,11 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:mind_mare_fe/theme/app_colors.dart';
 import 'package:provider/provider.dart';
 import '../../view_models/UserViewModel.dart';
 import '../../widgets/custom_bottom_navigation.dart';
-import 'NotificationsPage.dart';
+import 'CameraAI.dart';
 import 'ProfileScreen.dart';
 import 'statistics_page.dart';
 import 'suggestions_page.dart';
@@ -28,7 +27,7 @@ class _MindCareHomePageState extends State<MindCareHomePage> {
       HomePage(),
       SuggestionsPage(),
       StatisticsPage(),
-      NotificationsPage(),
+      CameraAIPage(),
       Profilescreen(uid: user?.uid ?? ""),
     ];
   }
