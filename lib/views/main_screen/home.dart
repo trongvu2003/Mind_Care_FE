@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:mind_mare_fe/theme/app_colors.dart';
 import 'package:provider/provider.dart';
 import '../../view_models/UserViewModel.dart';
@@ -39,7 +40,13 @@ class _MindCareHomePageState extends State<MindCareHomePage> {
       floatingActionButton:
           _selectedIndex == 0
               ? FloatingActionButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/newDiaryPage',
+                  );
+
+                },
                 backgroundColor: AppColors.text,
                 child: Icon(Icons.add, color: Colors.white, size: 30),
                 elevation: 1,
