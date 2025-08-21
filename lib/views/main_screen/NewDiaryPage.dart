@@ -260,12 +260,11 @@ class _NewDiaryPageState extends State<NewDiaryPage> {
                       : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Scroll ngang để xem ảnh
                       SizedBox(
                         height: 90,
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
-                          itemCount: _selectedImages.length + 1, // thêm 1 nút +
+                          itemCount: _selectedImages.length + 1,
                           separatorBuilder: (_, __) => const SizedBox(width: 8),
                           itemBuilder: (context, index) {
                             if (index == _selectedImages.length) {
