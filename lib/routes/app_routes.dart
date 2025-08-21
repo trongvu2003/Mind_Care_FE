@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../views/forgot_password.dart';
-import '../views/home.dart';
+import '../views/main_screen/home.dart';
 import '../views/intro2_screen.dart';
 import '../views/intro_screen.dart';
 import '../views/main_screen/ChatAI.dart';

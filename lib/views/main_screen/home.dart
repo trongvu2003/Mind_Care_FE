@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mind_mare_fe/theme/app_colors.dart';
 import 'package:provider/provider.dart';
-import '../view_models/UserViewModel.dart';
-import '../widgets/custom_bottom_navigation.dart';
-import 'main_screen/NotificationsPage.dart';
-import 'main_screen/ProfileScreen.dart';
-import 'main_screen/statistics_page.dart';
-import 'main_screen/suggestions_page.dart';
+import '../../view_models/UserViewModel.dart';
+import '../../widgets/custom_bottom_navigation.dart';
+import 'NotificationsPage.dart';
+import 'ProfileScreen.dart';
+import 'statistics_page.dart';
+import 'suggestions_page.dart';
 
 class MindCareHomePage extends StatefulWidget {
   @override
