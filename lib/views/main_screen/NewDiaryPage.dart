@@ -100,6 +100,7 @@ class _NewDiaryViewState extends State<_NewDiaryView> {
                             }
                           }
                           : null,
+
                   style: TextButton.styleFrom(
                     backgroundColor:
                         canSave ? AppColors.white : Colors.grey[400],
@@ -148,7 +149,8 @@ class _NewDiaryViewState extends State<_NewDiaryView> {
                             vertical: 10,
                           ),
                           decoration: BoxDecoration(
-                            color: selected ? Colors.grey[800] : Colors.grey[300],
+                            color:
+                                selected ? Colors.grey[800] : Colors.grey[300],
                             borderRadius: BorderRadius.circular(18),
                           ),
                           child: Text(
@@ -251,7 +253,9 @@ class _NewDiaryViewState extends State<_NewDiaryView> {
                                     return Stack(
                                       children: [
                                         ClipRRect(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           child: Image.file(
                                             file,
                                             width: 80,

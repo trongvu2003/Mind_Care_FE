@@ -58,4 +58,25 @@ class DiaryEntry {
       createdAt: createdAt,
     );
   }
+
+  factory DiaryEntry.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final m = doc.data() ?? {};
+    final ts = m['createdAt'];
+    final createdAt = ts is Timestamp ? ts.toDate() : DateTime.now();
+
+    return DiaryEntry(
+      id: doc.id,
+      uid: (m['uid'] ?? '').toString(),
+      content: (m['content'] ?? '').toString(),
+      selectedFeeling: m['selectedFeeling'] as String?,
+      imageUrls: (m['imageUrls'] as List?)?.map((e) => e.toString()).toList() ??
+          const [],
+      textSentiment: (m['textSentiment'] ?? '').toString(),
+      textSentimentScore: _numToDouble(m['textSentimentScore']),
+      imageEmotions: ((m['imageEmotions'] as List?) ?? [])
+          .map((e) => ImageEmotion.fromMap(Map<String, dynamic>.from(e)))
+          .toList(),
+      createdAt: createdAt,
+    );
+  }
 }

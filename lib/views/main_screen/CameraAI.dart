@@ -97,11 +97,13 @@ class _CameraAIPageState extends State<CameraAIPage> {
 
       // Lưu vào thư viện (Pictures/MindMare)
       final res = await SaverGallery.saveFile(
-        filePath: shot.path,
-        fileName: 'mind_mare_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        file: shot.path,
+        name: 'mind_mare_${DateTime.now().millisecondsSinceEpoch}.jpg',
         androidRelativePath: 'Pictures/MindMare',
-        skipIfExists: false,
+        androidExistNotSave: false,
       );
+
+
 
       if (res.isSuccess) {
         _toast('Ảnh đã lưu vào Thư viện');

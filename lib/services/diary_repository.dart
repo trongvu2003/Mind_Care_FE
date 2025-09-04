@@ -1,51 +1,45 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import '../models/diary_entry.dart';
 import '../models/image_emotion.dart';
+import '../services/upload_service.dart';
 
 class DiaryRepository {
-  final FirebaseFirestore _fire;
+  final FirebaseFirestore db;
+  final FirebaseAuth auth;
   final bool useUserSubcollection;
 
-  DiaryRepository({FirebaseFirestore? fire, this.useUserSubcollection = true})
-    : _fire = fire ?? FirebaseFirestore.instance;
+  DiaryRepository({
+    FirebaseFirestore? firestore,
+    FirebaseAuth? firebaseAuth,
+    this.useUserSubcollection = true,
+  })  : db = firestore ?? FirebaseFirestore.instance,
+        auth = firebaseAuth ?? FirebaseAuth.instance;
 
-  Stream<List<DiaryEntry>> streamUserDiaries(String uid, {int limit = 200}) {
-    Query<Map<String, dynamic>> q;
-    if (useUserSubcollection) {
-      q = _fire
-          .collection('users')
-          .doc(uid)
-          .collection('diaries')
-          .orderBy('createdAt', descending: true)
-          .limit(limit);
-    } else {
-      q = _fire
-          .collection('diaries')
-          .where('uid', isEqualTo: uid)
-          .orderBy('createdAt', descending: true)
-          .limit(limit);
-    }
-    return q.snapshots().map(
-      (s) => s.docs.map((d) => DiaryEntry.fromSnapshot(d)).toList(),
-    );
+  Future<String> uploadImageAndGetUrl(File file) async {
+    final res = await UploadService.uploadImage(file);
+    final url = res['url'];
+    if (url != null && url.isNotEmpty) return url;
+    throw Exception(res['error'] ?? 'Upload failed');
   }
 
-  Future<String> createDiary({
-    required String uid,
+  Future<String> addDiaryEntry({
     required String content,
     String? selectedFeeling,
-    List<String> imageUrls = const [],
-    String textSentiment = '',
-    double textSentimentScore = 0,
-    List<ImageEmotion> imageEmotions = const [],
+    required List<String> imageUrls,
+    required String textSentiment,
+    required double textSentimentScore,
+    required List<ImageEmotion> imageEmotions,
+    DateTime? createdAt,
   }) async {
-    final col =
-        useUserSubcollection
-            ? _fire.collection('users').doc(uid).collection('diaries')
-            : _fire.collection('diaries');
-    final doc = col.doc();
+    final uid = auth.currentUser?.uid;
+    if (uid == null || uid.isEmpty) {
+      throw Exception('Not logged in');
+    }
 
-    await doc.set({
+    final data = <String, dynamic>{
       'uid': uid,
       'content': content,
       'selectedFeeling': selectedFeeling,
@@ -53,9 +47,33 @@ class DiaryRepository {
       'textSentiment': textSentiment,
       'textSentimentScore': textSentimentScore,
       'imageEmotions': imageEmotions.map((e) => e.toMap()).toList(),
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+      'createdAt': FieldValue
+          .serverTimestamp(),
+    };
 
-    return doc.id;
+    if (useUserSubcollection) {
+      final ref = await db.collection('users').doc(uid).collection('diaries').add(data);
+      return ref.id;
+    } else {
+      final ref = await db.collection('diaries').add(data);
+      return ref.id;
+    }
+  }
+
+  Stream<List<DiaryEntry>> streamUserDiaries(String uid) {
+    if (uid.isEmpty) {
+      return const Stream<List<DiaryEntry>>.empty();
+    }
+
+    final Query<Map<String, dynamic>> baseQuery = useUserSubcollection
+        ? db.collection('users').doc(uid).collection('diaries')
+        : db.collection('diaries').where('uid', isEqualTo: uid);
+
+    return baseQuery
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs
+        .map((doc) => DiaryEntry.fromDoc(doc))
+        .toList());
   }
 }
