@@ -3,12 +3,16 @@ class ImageEmotion {
   final String overallEmotion;
   final double confidence;
   final Map<String, double> scores;
+  final String? summary;
+  final List<String> suggestions;
 
   ImageEmotion({
     required this.url,
     required this.overallEmotion,
     required this.confidence,
     required this.scores,
+    this.summary,
+    this.suggestions = const [],
   });
 
   Map<String, dynamic> toMap() => {
@@ -16,14 +20,18 @@ class ImageEmotion {
     'overallEmotion': overallEmotion,
     'confidence': confidence,
     'scores': scores,
+    if (summary != null) 'summary': summary,
+    'suggestions': suggestions,
   };
 
   factory ImageEmotion.fromMap(Map<String, dynamic> m) => ImageEmotion(
     url: (m['url'] ?? '').toString(),
-    overallEmotion: (m['overallEmotion'] ?? '').toString(),
+    overallEmotion: (m['overallEmotion'] ?? 'neutral').toString(),
     confidence: (m['confidence'] ?? 0).toDouble(),
-    scores: (m['scores'] as Map?)
-        ?.map((k, v) => MapEntry(k.toString(), (v as num).toDouble())) ??
-        <String, double>{},
+    scores: Map<String, double>.from(
+      (m['scores'] ?? {}).map((k, v) => MapEntry(k.toString(), (v as num).toDouble())),
+    ),
+    summary: (m['summary'] as String?)?.toString(),
+    suggestions: List<String>.from(m['suggestions'] ?? []),
   );
 }

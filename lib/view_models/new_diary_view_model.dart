@@ -44,12 +44,20 @@ class NewDiaryViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // AI phân tích text
-      final textAi = await ai.analyzeText(content.isEmpty ? ' ' : content);
+      //  phân tích text nếu có content
+      Map<String, dynamic> textAi = {
+        'sentiment': 'neutral',
+        'score': 0.0,
+        'summary': '',
+        'suggestions': <String>[],
+      };
+      if (content.trim().isNotEmpty) {
+        textAi = await ai.analyzeText(content.trim());
+      }
       final textSentiment = (textAi['sentiment'] ?? 'neutral').toString();
       final textScore = (textAi['score'] ?? 0).toDouble();
 
-      // Upload ảnh & AI ảnh
+      // Upload ảnh & phân tích ảnh
       final urls = <String>[];
       final imgEmotions = <ImageEmotion>[];
 
@@ -69,12 +77,33 @@ class NewDiaryViewModel extends ChangeNotifier {
                   (k, v) => MapEntry(k.toString(), (v as num).toDouble()),
                 ),
               ),
+              summary: (imgAi['summary'] ?? '').toString(),
+              suggestions: List<String>.from(imgAi['suggestions'] ?? []),
             ),
           );
         }
       }
 
-      //Firestore
+      // Chọn summary/suggestions cho ENTRY:
+      //   Ưu tiên từ text nếu có; nếu text rỗng → lấy từ ảnh đầu tiên
+      String? entrySummary =
+          (content.trim().isNotEmpty
+              ? (textAi['summary'] ?? '').toString()
+              : null);
+      List<String> entrySuggestions =
+          (content.trim().isNotEmpty
+              ? List<String>.from(textAi['suggestions'] ?? [])
+              : <String>[]);
+
+      if ((entrySummary == null || entrySummary.trim().isEmpty) &&
+          imgEmotions.isNotEmpty) {
+        entrySummary = imgEmotions.first.summary ?? '';
+      }
+      if (entrySuggestions.isEmpty && imgEmotions.isNotEmpty) {
+        entrySuggestions = imgEmotions.first.suggestions;
+      }
+
+      // Lưu Firestore
       final id = await repo.addDiaryEntry(
         content: content.trim(),
         selectedFeeling: feeling,
@@ -82,9 +111,11 @@ class NewDiaryViewModel extends ChangeNotifier {
         textSentiment: textSentiment,
         textSentimentScore: textScore,
         imageEmotions: imgEmotions,
+        summary: entrySummary,
+        suggestions: entrySuggestions,
       );
 
-      // Reset local (tuỳ ý)
+      // Reset
       content = '';
       feeling = null;
       localImages = [];

@@ -14,6 +14,8 @@ class DiaryEntry {
   final double textSentimentScore; // 0..1
   final List<ImageEmotion> imageEmotions;
   final DateTime createdAt;
+  final String? summary;
+  final List<String> suggestions;
 
   DiaryEntry({
     required this.id,
@@ -25,6 +27,8 @@ class DiaryEntry {
     required this.textSentimentScore,
     required this.imageEmotions,
     required this.createdAt,
+    this.summary,
+    this.suggestions = const [],
   });
 
   Map<String, dynamic> toFirestore() => {
@@ -36,10 +40,11 @@ class DiaryEntry {
     'textSentimentScore': textSentimentScore,
     'imageEmotions': imageEmotions.map((e) => e.toMap()).toList(),
     'createdAt': Timestamp.fromDate(createdAt),
+    'summary': summary,
+    'suggestions': suggestions,
   };
 
-  factory DiaryEntry.fromSnapshot(
-      DocumentSnapshot<Map<String, dynamic>> snap) {
+  factory DiaryEntry.fromSnapshot(DocumentSnapshot<Map<String, dynamic>> snap) {
     final m = snap.data() ?? {};
     final ts = m['createdAt'];
     final createdAt = ts is Timestamp ? ts.toDate() : DateTime.now();
@@ -49,13 +54,17 @@ class DiaryEntry {
       uid: (m['uid'] ?? '').toString(),
       content: (m['content'] ?? '').toString(),
       selectedFeeling: m['selectedFeeling'] as String?,
-      imageUrls: (m['imageUrls'] as List?)?.map((e) => e.toString()).toList() ?? const [],
+      imageUrls:
+          (m['imageUrls'] as List?)?.map((e) => e.toString()).toList() ?? [],
       textSentiment: (m['textSentiment'] ?? '').toString(),
       textSentimentScore: _numToDouble(m['textSentimentScore']),
-      imageEmotions: ((m['imageEmotions'] as List?) ?? [])
-          .map((e) => ImageEmotion.fromMap(Map<String, dynamic>.from(e)))
-          .toList(),
+      imageEmotions:
+          ((m['imageEmotions'] as List?) ?? [])
+              .map((e) => ImageEmotion.fromMap(Map<String, dynamic>.from(e)))
+              .toList(),
       createdAt: createdAt,
+      summary: m['summary']?.toString(),
+      suggestions: List<String>.from(m['suggestions'] ?? []),
     );
   }
 
@@ -69,14 +78,17 @@ class DiaryEntry {
       uid: (m['uid'] ?? '').toString(),
       content: (m['content'] ?? '').toString(),
       selectedFeeling: m['selectedFeeling'] as String?,
-      imageUrls: (m['imageUrls'] as List?)?.map((e) => e.toString()).toList() ??
-          const [],
+      imageUrls:
+          (m['imageUrls'] as List?)?.map((e) => e.toString()).toList() ?? [],
       textSentiment: (m['textSentiment'] ?? '').toString(),
       textSentimentScore: _numToDouble(m['textSentimentScore']),
-      imageEmotions: ((m['imageEmotions'] as List?) ?? [])
-          .map((e) => ImageEmotion.fromMap(Map<String, dynamic>.from(e)))
-          .toList(),
+      imageEmotions:
+          ((m['imageEmotions'] as List?) ?? [])
+              .map((e) => ImageEmotion.fromMap(Map<String, dynamic>.from(e)))
+              .toList(),
       createdAt: createdAt,
+      summary: m['summary']?.toString(),
+      suggestions: List<String>.from(m['suggestions'] ?? []),
     );
   }
 }

@@ -33,6 +33,8 @@ class DiaryRepository {
     required double textSentimentScore,
     required List<ImageEmotion> imageEmotions,
     DateTime? createdAt,
+    String? summary,
+    List<String> suggestions = const [],
   }) async {
     final uid = auth.currentUser?.uid;
     if (uid == null || uid.isEmpty) {
@@ -49,6 +51,8 @@ class DiaryRepository {
       'imageEmotions': imageEmotions.map((e) => e.toMap()).toList(),
       'createdAt': FieldValue
           .serverTimestamp(),
+      'summary': summary,
+      'suggestions': suggestions,
     };
 
     if (useUserSubcollection) {
