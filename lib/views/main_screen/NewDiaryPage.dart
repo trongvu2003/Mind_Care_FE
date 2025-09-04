@@ -1,196 +1,160 @@
 import 'dart:io';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import '../../services/api_service.dart';
+import '../../services/diary_repository.dart';
 import '../../theme/app_colors.dart';
-import '../../view_models/UserViewModel.dart';
+import '../../view_models/new_diary_view_model.dart';
 
-class NewDiaryPage extends StatefulWidget {
+class NewDiaryPage extends StatelessWidget {
   const NewDiaryPage({super.key});
 
   @override
-  State<NewDiaryPage> createState() => _NewDiaryPageState();
+  Widget build(BuildContext context) {
+    // Config API base (đổi IP LAN khi chạy trên device thật)
+    const baseUrl = 'http://192.168.1.72:3000';
+
+    return ChangeNotifierProvider(
+      create:
+          (_) => NewDiaryViewModel(
+            repo: DiaryRepository(useUserSubcollection: true),
+            ai: AIService(baseUrl: baseUrl),
+          ),
+      child: const _NewDiaryView(),
+    );
+  }
 }
 
-class _NewDiaryPageState extends State<NewDiaryPage> {
-  final TextEditingController _controller = TextEditingController();
-  final List<String> _attachments = [];
-  String? selectedFeeling;
-  late final UserViewModel userVM;
-  final String uid = FirebaseAuth.instance.currentUser?.uid ?? '';
-  final List<String> feelings = ["Vui", "Bình thường", "Buồn", "Mệt mỏi"];
-  List<File> _selectedImages = [];
-  final ImagePicker _picker = ImagePicker();
-  static const int maxImages = 5;
+class _NewDiaryView extends StatefulWidget {
+  const _NewDiaryView();
+
   @override
-  void initState() {
-    super.initState();
-    userVM = UserViewModel();
-    userVM.loadUser(uid);
+  State<_NewDiaryView> createState() => _NewDiaryViewState();
+}
+
+class _NewDiaryViewState extends State<_NewDiaryView> {
+  final _controller = TextEditingController();
+  final _picker = ImagePicker();
+  static const feelings = ['Vui', 'Bình thường', 'Buồn', 'Mệt mỏi'];
+
+  Future<void> _pickImages(NewDiaryViewModel vm) async {
+    final picked = await _picker.pickMultiImage(
+      maxWidth: 1200,
+      maxHeight: 1200,
+      imageQuality: 88,
+    );
+    if (picked.isEmpty) return;
+    vm.addLocalImages(picked.map((x) => File(x.path)).toList());
   }
 
-  Future<void> _pickImages() async {
-    try {
-      if (_selectedImages.length >= maxImages) {
-        Get.snackbar(
-          "Thông báo",
-          "Bạn chỉ có thể chọn tối đa $maxImages ảnh",
-          backgroundColor: Colors.orange.withOpacity(0.9),
-          colorText: Colors.white,
-          duration: const Duration(seconds: 2),
-        );
-        return;
-      }
-
-      final remainingSlots = maxImages - _selectedImages.length;
-      final pickedFiles = await _picker.pickMultiImage(
-        maxWidth: 800,
-        maxHeight: 800,
-        imageQuality: 85,
-      );
-
-      if (pickedFiles.isNotEmpty && mounted) {
-        List<File> newImages = [];
-        final imagesToAdd = pickedFiles.take(remainingSlots).toList();
-
-        for (var pickedFile in imagesToAdd) {
-          newImages.add(File(pickedFile.path));
-        }
-
-        setState(() {
-          _selectedImages.addAll(newImages);
-        });
-
-        if (pickedFiles.length > remainingSlots) {
-          Get.snackbar(
-            "Thông báo",
-            "Chỉ có thể thêm $remainingSlots ảnh nữa. Đã thêm ${imagesToAdd.length} ảnh.",
-            backgroundColor: Colors.orange.withOpacity(0.9),
-            colorText: Colors.white,
-            duration: const Duration(seconds: 3),
-          );
-        }
-      }
-    } catch (e) {
-      print('Error picking images: $e');
-      if (mounted) {
-        Get.snackbar(
-          "Lỗi",
-          "Không thể chọn ảnh: $e",
-          backgroundColor: Colors.red.withOpacity(0.9),
-          colorText: Colors.white,
-          duration: const Duration(seconds: 2),
-        );
-      }
-    }
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
-
 
   @override
   Widget build(BuildContext context) {
-    final canSave = _controller.text.isNotEmpty || _attachments.isNotEmpty;
+    return Consumer<NewDiaryViewModel>(
+      builder: (context, vm, _) {
+        final canSave = vm.canSave && !vm.saving;
 
-    return ChangeNotifierProvider.value(
-      value: userVM,
-      child: Consumer<UserViewModel>(
-        builder: (context, vm, child) {
-          return Scaffold(
-            backgroundColor: Colors.white,
-            appBar: AppBar(
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
-                onPressed: () => Navigator.pop(context),
+        return Scaffold(
+          backgroundColor: Colors.white,
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.black),
+              onPressed: () => Navigator.pop(context),
+            ),
+            backgroundColor: Colors.cyan,
+            elevation: 0,
+            title: const Text(
+              "Nhật ký mới",
+              style: TextStyle(
+                color: AppColors.title,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
               ),
-              backgroundColor: Colors.cyan,
-              elevation: 0,
-              title: const Text(
-                "Nhật ký mới",
-                style: TextStyle(
-                  color: AppColors.title,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              centerTitle: true,
-              actions: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 10, bottom: 8),
-                  child: TextButton(
-                    onPressed: canSave
-                        ? () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Đã lưu nhật ký")),
-                      );
-                    }
-                        : null,
-                    style: TextButton.styleFrom(
-                      backgroundColor: canSave ? AppColors.white : Colors.grey[800],
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+            ),
+            centerTitle: true,
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 10, bottom: 8),
+                child: TextButton(
+                  onPressed:
+                      canSave
+                          ? () async {
+                            try {
+                              final id = await vm.save(analyzeImages: true);
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Đã lưu nhật ký ($id)')),
+                              );
+                              Navigator.pop(context);
+                            } catch (e) {
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Lỗi: $e')),
+                              );
+                            }
+                          }
+                          : null,
+                  style: TextButton.styleFrom(
+                    backgroundColor:
+                        canSave ? AppColors.white : Colors.grey[400],
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
                     ),
-                    child: Text(
-                      "Lưu",
-                      style: TextStyle(
-                        color: canSave ? const Color(0xFF009206): AppColors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    vm.saving ? 'Đang lưu...' : 'Lưu',
+                    style: TextStyle(
+                      color: canSave ? const Color(0xFF009206) : Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
 
-            body: Column(
+          body: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ListTile(
-                  leading: CircleAvatar(
-                    radius: 30,
-                    backgroundImage: vm.user?.avatarUrl.isNotEmpty == true
-                        ? NetworkImage(vm.user!.avatarUrl)
-                        : null,
-                    child: vm.user?.avatarUrl.isEmpty ?? true
-                        ? const Icon(Icons.person, color: Colors.white, size: 28)
-                        : null,
-                  ),
-                  title: Text(
-                    vm.user?.name ?? "Người dùng",
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.more_vert, color: Colors.black54),
-                    onPressed: () {},
-                  ),
-                ),
+                // feelings
                 SizedBox(
-                  height: 40,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
+                  height: 48,
+                  child: ListView.separated(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
+                    scrollDirection: Axis.horizontal,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
                     itemCount: feelings.length,
-                    itemBuilder: (context, index) {
-                      final feeling = feelings[index];
-                      final isSelected = selectedFeeling == feeling;
+                    itemBuilder: (_, i) {
+                      final f = feelings[i];
+                      final selected = vm.feeling == f;
                       return GestureDetector(
-                        onTap: () => setState(() => selectedFeeling = feeling),
+                        onTap: () => vm.setFeeling(f),
                         child: Container(
-                          margin: const EdgeInsets.only(right: 8),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
                           decoration: BoxDecoration(
-                            color: isSelected ? Colors.grey[800] : Colors.grey[300],
+                            color: selected ? Colors.grey[800] : Colors.grey[300],
                             borderRadius: BorderRadius.circular(18),
                           ),
                           child: Text(
-                            feeling,
+                            f,
                             style: TextStyle(
-                              color: isSelected ? Colors.white : Colors.black87,
+                              color: selected ? Colors.white : Colors.black87,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -200,12 +164,16 @@ class _NewDiaryPageState extends State<NewDiaryPage> {
                   ),
                 ),
 
-                // Text nhập nội dung
+                // content
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     child: TextField(
                       controller: _controller,
+                      onChanged: vm.setContent,
                       maxLines: null,
                       expands: true,
                       keyboardType: TextInputType.multiline,
@@ -214,105 +182,137 @@ class _NewDiaryPageState extends State<NewDiaryPage> {
                         hintText: "Hôm nay bạn cảm thấy thế nào?",
                         border: InputBorder.none,
                       ),
-                      onChanged: (_) => setState(() {}),
                     ),
                   ),
                 ),
-                Divider(
-                  thickness: 4,
-                  color: Colors.grey,
-                ),
+
+                const Divider(thickness: 4, color: Colors.grey),
+
+                // images
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: _selectedImages.isEmpty
-                      ? GestureDetector(
-                    onTap: _pickImages,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.folder_open, size: 60, color: Colors.grey),
-                        SizedBox(height: 12),
-                        Text(
-                          "Thêm tệp hình ảnh",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.black54,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                      : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        height: 90,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: _selectedImages.length + 1,
-                          separatorBuilder: (_, __) => const SizedBox(width: 8),
-                          itemBuilder: (context, index) {
-                            if (index == _selectedImages.length) {
-                              return GestureDetector(
-                                onTap: _pickImages,
-                                child: Container(
-                                  width: 80,
-                                  height: 90,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(Icons.add, size: 32, color: Colors.grey),
+                  child:
+                      vm.localImages.isEmpty
+                          ? GestureDetector(
+                            onTap: () => _pickImages(vm),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(
+                                  Icons.folder_open,
+                                  size: 60,
+                                  color: Colors.grey,
                                 ),
-                              );
-                            }
-
-                            final file = _selectedImages[index];
-                            return ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.file(
-                                file,
-                                width: 80,
+                                SizedBox(height: 12),
+                                Text(
+                                  "Thêm tệp hình ảnh",
+                                  style: TextStyle(
+                                    color: Colors.black54,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                          : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
                                 height: 90,
-                                fit: BoxFit.cover,
+                                child: ListView.separated(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: vm.localImages.length + 1,
+                                  separatorBuilder:
+                                      (_, __) => const SizedBox(width: 8),
+                                  itemBuilder: (_, i) {
+                                    if (i == vm.localImages.length) {
+                                      return GestureDetector(
+                                        onTap: () => _pickImages(vm),
+                                        child: Container(
+                                          width: 80,
+                                          height: 90,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[200],
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: const Icon(
+                                            Icons.add,
+                                            size: 32,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                    final file = vm.localImages[i];
+                                    return Stack(
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: Image.file(
+                                            file,
+                                            width: 80,
+                                            height: 90,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                        Positioned(
+                                          right: 4,
+                                          top: 4,
+                                          child: GestureDetector(
+                                            onTap: () => vm.removeLocalAt(i),
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                color: Colors.black54,
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              padding: const EdgeInsets.all(2),
+                                              child: const Icon(
+                                                Icons.close,
+                                                color: Colors.white,
+                                                size: 16,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ),
                               ),
-                            );
-                          },
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-                      Text(
-                        "Đã thêm ${_selectedImages.length} tệp",
-                        style: const TextStyle(
-                          color: Colors.black87,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "Đã thêm ${vm.localImages.length} tệp",
+                                style: const TextStyle(
+                                  color: Colors.black87,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
                 ),
+
+                if (vm.error != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      'Lỗi: ${vm.error}',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
               ],
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }
