@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../views/forgot_password.dart';
 import '../views/main_screen/NewDiaryPage.dart';
 import '../views/main_screen/home.dart';
@@ -56,16 +55,6 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const AichatRoom());
       case newDiaryPage:
         return MaterialPageRoute(builder: (_) => const NewDiaryPage());
-      // case home:
-      //   return MaterialPageRoute(builder: (_) => const HomeScreen());
-      // case journal:
-      //   return MaterialPageRoute(builder: (_) => const JournalScreen());
-      // case suggestion:
-      //   return MaterialPageRoute(builder: (_) => const SuggestionScreen());
-      // case stats:
-      //   return MaterialPageRoute(builder: (_) => const StatsScreen());
-      // case profile:
-      //   return MaterialPageRoute(builder: (_) => const ProfileScreen());
       default:
         return MaterialPageRoute(
           builder:
