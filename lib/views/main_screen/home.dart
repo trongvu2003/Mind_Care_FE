@@ -3,12 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mind_mare_fe/theme/app_colors.dart';
 import 'package:provider/provider.dart';
-
 import '../../models/diary_entry.dart';
 import '../../services/diary_repository.dart';
 import '../../view_models/UserViewModel.dart';
 import '../../view_models/home_feed_view_model.dart';
-
 import 'CameraAI.dart';
 import 'ProfileScreen.dart';
 import 'diary_detail_page.dart';
@@ -79,10 +77,11 @@ class _HomePageState extends State<HomePage> {
   late final UserViewModel userVM;
   late final HomeFeedViewModel feedVM;
   final String uid = FirebaseAuth.instance.currentUser?.uid ?? '';
-
-  // ---- Multi-select state ----
   bool _multiSelect = false;
   final Set<String> _selectedIds = {};
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _query = '';
+  bool _searching = false;
 
   @override
   void initState() {
@@ -96,6 +95,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
+    _searchCtrl.dispose();
     userVM.dispose();
     feedVM.dispose();
     super.dispose();
@@ -127,6 +127,32 @@ class _HomePageState extends State<HomePage> {
 
   bool _isSelected(String id) => _selectedIds.contains(id);
 
+  List<DiaryEntry> _filterEntries(List<DiaryEntry> list, String q) {
+    final s = q.toLowerCase().trim();
+    if (s.isEmpty) return list;
+
+    return list.where((e) {
+        final content = e.content.toLowerCase();
+        final feeling = (e.selectedFeeling ?? '').toLowerCase();
+        final senti = e.textSentiment.toLowerCase();
+        final time1 =
+            DateFormat(
+              'dd/MM/yyyy',
+            ).format(e.createdAt.toLocal()).toLowerCase();
+        final time2 =
+            DateFormat(
+              'HH:mm dd/MM',
+            ).format(e.createdAt.toLocal()).toLowerCase();
+
+        return content.contains(s) ||
+            feeling.contains(s) ||
+            senti.contains(s) ||
+            time1.contains(s) ||
+            time2.contains(s);
+      }).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
   Future<void> _deleteSelected() async {
     if (_selectedIds.isEmpty) return;
     final ok = await showDialog<bool>(
@@ -140,9 +166,7 @@ class _HomePageState extends State<HomePage> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.text,
-                ),
+                style: TextButton.styleFrom(foregroundColor: AppColors.text),
                 child: const Text('Huỷ'),
               ),
               ElevatedButton(
@@ -161,19 +185,18 @@ class _HomePageState extends State<HomePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
-            children: [
-              const Icon(Icons.check_circle_outline, color: Colors.white),
-              const SizedBox(width: 12),
+            children: const [
+              Icon(Icons.check_circle_outline, color: Colors.white),
+              SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Đã xoá ${_selectedIds.length} nhật ký',
-                  style: const TextStyle(fontSize: 16),
+                  'Đã xoá nhật ký đã chọn',
+                  style: TextStyle(fontSize: 16),
                 ),
               ),
             ],
           ),
           backgroundColor: Colors.green.shade600,
-          shape: const RoundedRectangleBorder(),
           duration: const Duration(seconds: 3),
           elevation: 4,
         ),
@@ -188,6 +211,17 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _toggleSearch() {
+    setState(() {
+      _searching = !_searching;
+      if (!_searching) {
+        _searchCtrl.clear();
+        _query = '';
+        FocusScope.of(context).unfocus();
+      } else {}
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -197,12 +231,23 @@ class _HomePageState extends State<HomePage> {
       ],
       child: Consumer2<UserViewModel, HomeFeedViewModel>(
         builder: (context, vm, feed, child) {
+          final allEntries = <DiaryEntry>[
+            ...feed.today,
+            ...feed.thisMonth,
+            for (final list in feed.byYear.values) ...list,
+          ];
+          final showSearch = _query.trim().isNotEmpty;
+          final searchResults =
+              showSearch
+                  ? _filterEntries(allEntries, _query)
+                  : const <DiaryEntry>[];
+
           return Scaffold(
             backgroundColor: AppColors.white,
             appBar: AppBar(
               backgroundColor: AppColors.white,
               elevation: 0,
-              leading: Icon(Icons.menu, color: AppColors.black),
+              leading: const Icon(Icons.menu, color: Colors.black),
               title: Row(
                 children: [
                   Image.asset(
@@ -238,10 +283,74 @@ class _HomePageState extends State<HomePage> {
                           icon: const Icon(Icons.close, color: Colors.black),
                         ),
                       ]
-                      : const [
-                        Icon(Icons.search, color: Colors.black),
-                        SizedBox(width: 15),
+                      : [
+                        IconButton(
+                          tooltip: _searching ? 'Đóng tìm kiếm' : 'Tìm kiếm',
+                          onPressed: _toggleSearch,
+                          icon: Icon(
+                            _searching ? Icons.close : Icons.search,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                       ],
+              //  _searching = true
+              bottom:
+                  _searching
+                      ? PreferredSize(
+                        preferredSize: const Size.fromHeight(56),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          color: Colors.white,
+                          child: TextField(
+                            controller: _searchCtrl,
+                            onChanged: (v) => setState(() => _query = v),
+                            autofocus: true,
+                            decoration: InputDecoration(
+                              hintText: 'Tìm theo nội dung, cảm xúc, ngày...',
+                              prefixIcon: const Icon(Icons.search),
+                              suffixIcon:
+                                  (_query.isNotEmpty)
+                                      ? IconButton(
+                                        icon: const Icon(Icons.clear),
+                                        onPressed: () {
+                                          _searchCtrl.clear();
+                                          setState(() => _query = '');
+                                        },
+                                      )
+                                      : null,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFE0E0E0),
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFE0E0E0),
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Colors.teal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                      : null,
             ),
             body:
                 feed.isLoading
@@ -253,9 +362,14 @@ class _HomePageState extends State<HomePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _header(vm),
-                          _buildSection('Hôm nay', feed.today),
-                          _buildSection('Tháng này', feed.thisMonth),
-                          ..._yearSections(feed.byYear),
+                          if (showSearch)
+                            _buildSection('Kết quả tìm kiếm', searchResults)
+                          else ...[
+                            _buildSection('Hôm nay', feed.today),
+                            _buildSection('Tháng này', feed.thisMonth),
+                            ..._yearSections(feed.byYear),
+                          ],
+
                           const SizedBox(height: 100),
                         ],
                       ),
@@ -267,6 +381,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _header(UserViewModel vm) {
+    final name = (vm.user?.name ?? 'Bạn');
     return Container(
       padding: const EdgeInsets.all(20),
       color: AppColors.text,
@@ -294,18 +409,18 @@ class _HomePageState extends State<HomePage> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
-                      'Chào buổi sáng! Bạn',
-                      style: TextStyle(
+                      'Chào buổi sáng! $name',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
-                    SizedBox(height: 4),
-                    Text(
+                    const SizedBox(height: 4),
+                    const Text(
                       'Hôm nay bạn cảm thấy thế nào?',
                       style: TextStyle(
                         color: Colors.white,
@@ -360,7 +475,24 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildSection(String title, List<DiaryEntry> items) {
-    if (items.isEmpty) return const SizedBox.shrink();
+    if (items.isEmpty) {
+      if (title == 'Kết quả tìm kiếm') {
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Text('Không tìm thấy kết quả phù hợp.'),
+          ),
+        );
+      }
+      return const SizedBox.shrink();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -439,6 +571,7 @@ class _HomePageState extends State<HomePage> {
             if (!_multiSelect)
               ElevatedButton(
                 onPressed: () {
+                  final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
                   Navigator.push(
                     context,
                     MaterialPageRoute(
