@@ -1,13 +1,13 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mind_mare_fe/theme/app_colors.dart';
 import 'package:provider/provider.dart';
+
+import '../../models/diary_entry.dart';
 import '../../services/diary_repository.dart';
 import '../../view_models/UserViewModel.dart';
 import '../../view_models/home_feed_view_model.dart';
-import '../../models/diary_entry.dart';
 
 import 'CameraAI.dart';
 import 'ProfileScreen.dart';
@@ -31,9 +31,9 @@ class _MindCareHomePageState extends State<MindCareHomePage> {
     super.initState();
     _pages = [
       HomePage(),
-      SuggestionsPage(),
-      StatisticsPage(),
-      CameraAIPage(),
+      const SuggestionsPage(),
+      const StatisticsPage(),
+      const CameraAIPage(),
       Profilescreen(uid: user?.uid ?? ""),
     ];
   }
@@ -80,6 +80,10 @@ class _HomePageState extends State<HomePage> {
   late final HomeFeedViewModel feedVM;
   final String uid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
+  // ---- Multi-select state ----
+  bool _multiSelect = false;
+  final Set<String> _selectedIds = {};
+
   @override
   void initState() {
     super.initState();
@@ -95,6 +99,93 @@ class _HomePageState extends State<HomePage> {
     userVM.dispose();
     feedVM.dispose();
     super.dispose();
+  }
+
+  void _enterMultiSelect([DiaryEntry? e]) {
+    if (!_multiSelect) {
+      setState(() => _multiSelect = true);
+    }
+    if (e != null) _toggleSelect(e.id);
+  }
+
+  void _exitMultiSelect() {
+    setState(() {
+      _multiSelect = false;
+      _selectedIds.clear();
+    });
+  }
+
+  void _toggleSelect(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+      } else {
+        _selectedIds.add(id);
+      }
+    });
+  }
+
+  bool _isSelected(String id) => _selectedIds.contains(id);
+
+  Future<void> _deleteSelected() async {
+    if (_selectedIds.isEmpty) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            title: const Text('Xoá nhật ký đã chọn?'),
+            content: Text(
+              'Bạn muốn xoá ${_selectedIds.length} ghi chú đã tick?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.text,
+                ),
+                child: const Text('Huỷ'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text('Xoá'),
+              ),
+            ],
+          ),
+    );
+    if (ok != true) return;
+
+    try {
+      await feedVM.deleteEntries(_selectedIds);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_outline, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Đã xoá ${_selectedIds.length} nhật ký',
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green.shade600,
+          shape: const RoundedRectangleBorder(),
+          duration: const Duration(seconds: 3),
+          elevation: 4,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Xoá thất bại: $e')));
+    } finally {
+      if (mounted) _exitMultiSelect();
+    }
   }
 
   @override
@@ -132,10 +223,25 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
               centerTitle: true,
-              actions: const [
-                Icon(Icons.search, color: Colors.black),
-                SizedBox(width: 15),
-              ],
+              actions:
+                  _multiSelect
+                      ? [
+                        IconButton(
+                          tooltip: 'Xoá đã chọn',
+                          onPressed:
+                              _selectedIds.isEmpty ? null : _deleteSelected,
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                        ),
+                        IconButton(
+                          tooltip: 'Thoát chọn',
+                          onPressed: _exitMultiSelect,
+                          icon: const Icon(Icons.close, color: Colors.black),
+                        ),
+                      ]
+                      : const [
+                        Icon(Icons.search, color: Colors.black),
+                        SizedBox(width: 15),
+                      ],
             ),
             body:
                 feed.isLoading
@@ -188,18 +294,18 @@ class _HomePageState extends State<HomePage> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                  children: const [
                     Text(
-                      'Chào buổi sáng! ${vm.user?.name ?? 'Bạn'}',
-                      style: const TextStyle(
+                      'Chào buổi sáng! Bạn',
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
+                    SizedBox(height: 4),
+                    Text(
                       'Hôm nay bạn cảm thấy thế nào?',
                       style: TextStyle(
                         color: Colors.white,
@@ -221,8 +327,8 @@ class _HomePageState extends State<HomePage> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(17),
               ),
-              child: Row(
-                children: const [
+              child: const Row(
+                children: [
                   Expanded(
                     child: TextField(
                       enabled: false,
@@ -290,29 +396,35 @@ class _HomePageState extends State<HomePage> {
             ? ' • ${e.textSentiment}${e.textSentimentScore > 0 ? ' ${(e.textSentimentScore * 100).toStringAsFixed(0)}%' : ''}'
             : '';
 
+    final checked = _isSelected(e.id);
+
     return InkWell(
+      onLongPress: () => _enterMultiSelect(e),
       onTap: () {
+        if (_multiSelect) {
+          _toggleSelect(e.id);
+          return;
+        }
         final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => DiaryDetailPage(
-              diaryId: e.id,
-              uid: uid,
-              initial: e,
-            ),
+            builder:
+                (_) => DiaryDetailPage(diaryId: e.id, uid: uid, initial: e),
           ),
         );
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: AppColors.text.withOpacity(0.7),
           borderRadius: BorderRadius.circular(15),
         ),
         child: Row(
           children: [
+            if (_multiSelect)
+              Checkbox(value: checked, onChanged: (_) => _toggleSelect(e.id)),
             Expanded(
               child: Text(
                 '$timeString  $preview$senti',
@@ -324,24 +436,37 @@ class _HomePageState extends State<HomePage> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.title,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                  side: const BorderSide(color: Colors.white, width: 2),
+            if (!_multiSelect)
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (_) => DiaryDetailPage(
+                            diaryId: e.id,
+                            uid: uid,
+                            initial: e,
+                          ),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.title,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                    side: const BorderSide(color: Colors.white, width: 2),
+                  ),
+                  elevation: 6,
+                  minimumSize: const Size(50, 50),
+                  padding: EdgeInsets.zero,
                 ),
-                elevation: 6,
-                minimumSize: const Size(50, 50),
-                padding: EdgeInsets.zero,
+                child: const Icon(
+                  Icons.lightbulb_outline,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
-              child: const Icon(
-                Icons.lightbulb_outline,
-                color: Colors.white,
-                size: 28,
-              ),
-            ),
           ],
         ),
       ),

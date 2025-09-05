@@ -62,6 +62,11 @@ class HomeFeedViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> deleteEntries(Set<String> ids) async {
+    if (ids.isEmpty) return;
+    await repo.deleteMany(uid, ids.toList());
+  }
+
   @override
   void dispose() {
     _sub?.cancel();

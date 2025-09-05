@@ -97,4 +97,18 @@ class DiaryRepository {
       return DiaryEntry.fromDoc(snapshot);
     });
   }
+
+  CollectionReference<Map<String, dynamic>> _col(String uid) {
+    return useUserSubcollection
+        ? db.collection('users').doc(uid).collection('diaries')
+        : db.collection('diaries');
+  }
+  Future<void> deleteMany(String uid, List<String> ids) async {
+    final col = _col(uid);
+    final batch = db.batch();
+    for (final id in ids) {
+      batch.delete(col.doc(id));
+    }
+    await batch.commit();
+  }
 }
