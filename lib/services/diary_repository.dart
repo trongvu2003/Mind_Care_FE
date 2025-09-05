@@ -15,8 +15,8 @@ class DiaryRepository {
     FirebaseFirestore? firestore,
     FirebaseAuth? firebaseAuth,
     this.useUserSubcollection = true,
-  })  : db = firestore ?? FirebaseFirestore.instance,
-        auth = firebaseAuth ?? FirebaseAuth.instance;
+  }) : db = firestore ?? FirebaseFirestore.instance,
+       auth = firebaseAuth ?? FirebaseAuth.instance;
 
   Future<String> uploadImageAndGetUrl(File file) async {
     final res = await UploadService.uploadImage(file);
@@ -49,14 +49,17 @@ class DiaryRepository {
       'textSentiment': textSentiment,
       'textSentimentScore': textSentimentScore,
       'imageEmotions': imageEmotions.map((e) => e.toMap()).toList(),
-      'createdAt': FieldValue
-          .serverTimestamp(),
+      'createdAt': FieldValue.serverTimestamp(),
       'summary': summary,
       'suggestions': suggestions,
     };
 
     if (useUserSubcollection) {
-      final ref = await db.collection('users').doc(uid).collection('diaries').add(data);
+      final ref = await db
+          .collection('users')
+          .doc(uid)
+          .collection('diaries')
+          .add(data);
       return ref.id;
     } else {
       final ref = await db.collection('diaries').add(data);
@@ -69,15 +72,29 @@ class DiaryRepository {
       return const Stream<List<DiaryEntry>>.empty();
     }
 
-    final Query<Map<String, dynamic>> baseQuery = useUserSubcollection
-        ? db.collection('users').doc(uid).collection('diaries')
-        : db.collection('diaries').where('uid', isEqualTo: uid);
+    final Query<Map<String, dynamic>> baseQuery =
+        useUserSubcollection
+            ? db.collection('users').doc(uid).collection('diaries')
+            : db.collection('diaries').where('uid', isEqualTo: uid);
 
     return baseQuery
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snap) => snap.docs
-        .map((doc) => DiaryEntry.fromDoc(doc))
-        .toList());
+        .map(
+          (snap) => snap.docs.map((doc) => DiaryEntry.fromDoc(doc)).toList(),
+        );
+  }
+
+  Stream<DiaryEntry?> streamDiaryById(String uid, String diaryId) {
+    final docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('diaries')
+        .doc(diaryId);
+
+    return docRef.snapshots().map((snapshot) {
+      if (!snapshot.exists) return null;
+      return DiaryEntry.fromDoc(snapshot);
+    });
   }
 }

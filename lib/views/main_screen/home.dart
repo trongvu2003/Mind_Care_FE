@@ -11,6 +11,7 @@ import '../../models/diary_entry.dart';
 
 import 'CameraAI.dart';
 import 'ProfileScreen.dart';
+import 'diary_detail_page.dart';
 import 'statistics_page.dart';
 import 'suggestions_page.dart';
 import '../../widgets/custom_bottom_navigation.dart';
@@ -289,45 +290,60 @@ class _HomePageState extends State<HomePage> {
             ? ' • ${e.textSentiment}${e.textSentimentScore > 0 ? ' ${(e.textSentimentScore * 100).toStringAsFixed(0)}%' : ''}'
             : '';
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: AppColors.text.withOpacity(0.7),
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              '$timeString  $preview$senti',
-              style: TextStyle(
-                color: AppColors.black,
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-              ),
-              overflow: TextOverflow.ellipsis,
+    return InkWell(
+      onTap: () {
+        final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DiaryDetailPage(
+              diaryId: e.id,
+              uid: uid,
+              initial: e,
             ),
           ),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.title,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25),
-                side: const BorderSide(color: Colors.white, width: 2),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: AppColors.text.withOpacity(0.7),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                '$timeString  $preview$senti',
+                style: TextStyle(
+                  color: AppColors.black,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
-              elevation: 6,
-              minimumSize: const Size(50, 50),
-              padding: EdgeInsets.zero,
             ),
-            child: const Icon(
-              Icons.lightbulb_outline,
-              color: Colors.white,
-              size: 28,
+            ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.title,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                  side: const BorderSide(color: Colors.white, width: 2),
+                ),
+                elevation: 6,
+                minimumSize: const Size(50, 50),
+                padding: EdgeInsets.zero,
+              ),
+              child: const Icon(
+                Icons.lightbulb_outline,
+                color: Colors.white,
+                size: 28,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
