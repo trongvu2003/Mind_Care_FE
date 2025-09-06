@@ -97,6 +97,14 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  String _getGreeting() {
+    final now = DateTime.now().hour;
+    if (now < 11) return 'Chào buổi sáng';
+    if (now < 13) return 'Chào buổi trưa';
+    if (now < 18) return 'Chào buổi chiều';
+    return 'Chào buổi tối';
+  }
+
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -605,10 +613,11 @@ class _HomePageState extends State<HomePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Chào buổi sáng! $name',
+                      '${_getGreeting()}! $name',
+                      maxLines: 2,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 20,
+                        fontSize: 19,
                         fontWeight: FontWeight.bold,
                       ),
                       overflow: TextOverflow.ellipsis,
