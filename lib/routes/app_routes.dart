@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../views/forgot_password.dart';
+import '../views/main_screen/CameraAI.dart';
 import '../views/main_screen/NewDiaryPage.dart';
 import '../views/main_screen/home.dart';
 import '../views/intro2_screen.dart';
@@ -29,6 +30,7 @@ class AppRoutes {
   static const String editprofile = '/editProfile';
   static const String AIchatRoom = '/aichatroom';
   static const String newDiaryPage = '/newDiaryPage';
+  static const String cameraAI = '/cameraAI';
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case intro:
@@ -55,6 +57,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const AichatRoom());
       case newDiaryPage:
         return MaterialPageRoute(builder: (_) => const NewDiaryPage());
+      case cameraAI:
+        return MaterialPageRoute(builder: (_) => const CameraAIPage());
       default:
         return MaterialPageRoute(
           builder:

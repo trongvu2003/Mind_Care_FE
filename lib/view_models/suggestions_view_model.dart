@@ -8,9 +8,7 @@ class SuggestionsViewModel extends ChangeNotifier {
 
   bool loading = true;
   String? error;
-
-  // Có entry gần nhất hay không
-  bool hasEntry = false;
+  bool hasToday= false;
   String label = 'Không rõ';
 
   // % mức độ tích cực hiển thị (0..1)
@@ -27,6 +25,11 @@ class SuggestionsViewModel extends ChangeNotifier {
     notifyListeners();
 
     _sub?.cancel();
+    if (uid.isEmpty) {
+      _setEmptyToday();
+      return;
+    }
+
     _sub = FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
@@ -38,11 +41,24 @@ class SuggestionsViewModel extends ChangeNotifier {
           (snap) {
             try {
               if (snap.docs.isEmpty) {
-                _setEmpty();
+                _setEmptyToday();
                 return;
               }
 
-              final m = snap.docs.first.data();
+              final doc = snap.docs.first;
+              final m = doc.data();
+              DateTime? createdAt;
+              final rawTs = m['createdAt'];
+              if (rawTs is Timestamp) {
+                createdAt = rawTs.toDate();
+              } else if (rawTs is int) {
+                createdAt = DateTime.fromMillisecondsSinceEpoch(rawTs);
+              }
+              if (createdAt == null ||
+                  !_isSameDay(createdAt.toLocal(), DateTime.now())) {
+                _setEmptyToday();
+                return;
+              }
 
               // Lấy feeling/label
               final selectedFeeling = (m['selectedFeeling'] as String?)?.trim();
@@ -100,7 +116,7 @@ class SuggestionsViewModel extends ChangeNotifier {
               label = computedLabel;
               percent = p;
               suggestions = sugList.isEmpty ? _fallback() : sugList;
-              hasEntry = true;
+              hasToday = true;
               loading = false;
               error = null;
               notifyListeners();
@@ -118,21 +134,26 @@ class SuggestionsViewModel extends ChangeNotifier {
         );
   }
 
-  void _setEmpty() {
-    hasEntry = false;
-    label = 'Chưa có dữ liệu';
+  // Hôm nay chưa có entry → rỗng/empty-state (không lấy gần nhất)
+  void _setEmptyToday() {
+    hasToday = false;
+    label = 'Chưa có dữ liệu hôm nay';
     percent = 0.0;
-    suggestions = _fallback();
+    suggestions = const [];
     loading = false;
     error = null;
     notifyListeners();
   }
 
+  // Nếu muốn vẫn có gợi ý chung khi có entry hôm nay nhưng thiếu 'suggestions'
   List<String> _fallback() => const [
     "🎶 Nghe một bản nhạc bạn yêu thích.",
     "📓 Ghi lại 3 điều bạn biết ơn hôm nay.",
     "🚶 Đi dạo 10–15 phút để thư giãn.",
   ];
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
   // Map sentiment EN → VN
   String? _vnSentiment(String? s) {
@@ -175,8 +196,11 @@ class SuggestionsViewModel extends ChangeNotifier {
     if (v.contains('buồn')) return 'sad';
     if (v.contains('giận') || v.contains('tức')) return 'angry';
     if (v.contains('lo lắng')) return 'fear';
-    if (v.contains('khó chịu') || v.contains('ghê') || v.contains('chán ghét'))
+    if (v.contains('khó chịu') ||
+        v.contains('ghê') ||
+        v.contains('chán ghét')) {
       return 'disgust';
+    }
     if (v.contains('ngạc nhiên')) return 'surprise';
     if (v.contains('bình thường')) return 'neutral';
     if (v.contains('tiêu cực')) return 'negative';

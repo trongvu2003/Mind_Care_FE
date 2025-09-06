@@ -84,6 +84,60 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
     if (vm.error != null) {
       return Center(child: Text('Lỗi: ${vm.error}'));
     }
+    if (!vm.hasToday) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.calendar_today_outlined, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
+              const Text(
+                'Hôm nay bạn chưa viết nhật ký',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Hãy ghi lại cảm xúc để mình gợi ý phù hợp nhé!',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                alignment: WrapAlignment.center,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.pushNamed(context, '/newDiaryPage'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.text,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Viết nhật ký'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () => Navigator.pushNamed(context, '/cameraAI'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.title,
+                      side: BorderSide(color: AppColors.title),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    icon: const Icon(Icons.camera_alt_outlined),
+                    label: const Text('Camera AI'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
