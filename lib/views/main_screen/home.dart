@@ -7,6 +7,7 @@ import '../../models/diary_entry.dart';
 import '../../services/diary_repository.dart';
 import '../../view_models/UserViewModel.dart';
 import '../../view_models/home_feed_view_model.dart';
+import '../../view_models/sign_in_viewmodel.dart';
 import 'CameraAI.dart';
 import 'ProfileScreen.dart';
 import 'diary_detail_page.dart';
@@ -28,7 +29,7 @@ class _MindCareHomePageState extends State<MindCareHomePage> {
   void initState() {
     super.initState();
     _pages = [
-      HomePage(),
+      HomePage(onSelectTab: (i) => setState(() => _selectedIndex = i)),
       const SuggestionsPage(),
       const StatisticsPage(),
       const CameraAIPage(),
@@ -42,22 +43,15 @@ class _MindCareHomePageState extends State<MindCareHomePage> {
       body: _pages[_selectedIndex],
       floatingActionButton:
           _selectedIndex == 0
-              ? FloatingActionButton.extended(
+              ? FloatingActionButton(
                 onPressed: () => Navigator.pushNamed(context, '/newDiaryPage'),
                 backgroundColor: AppColors.text,
-                icon: const Icon(Icons.add, color: Colors.white),
-                label: const Text(
-                  'Nhật ký mới',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
                 elevation: 1,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(50),
                   side: const BorderSide(width: 1, color: Colors.white),
                 ),
+                child: const Icon(Icons.add, color: Colors.white, size: 35),
               )
               : null,
       bottomNavigationBar: CustomBottomNavigation(
@@ -69,6 +63,8 @@ class _MindCareHomePageState extends State<MindCareHomePage> {
 }
 
 class HomePage extends StatefulWidget {
+  const HomePage({super.key, this.onSelectTab});
+  final void Function(int index)? onSelectTab;
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -99,6 +95,196 @@ class _HomePageState extends State<HomePage> {
     userVM.dispose();
     feedVM.dispose();
     super.dispose();
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Center(
+            child: Text(
+              "Đăng xuất",
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          content: Text("Bạn có chắc muốn đăng xuất?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.white,
+                backgroundColor: AppColors.text,
+              ),
+              child: Text("Hủy"),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.white,
+                backgroundColor: AppColors.red,
+              ),
+              onPressed: () async {
+                await dialogContext.read<SignInViewModel>().signOut();
+                if (context.mounted) {
+                  Navigator.pushReplacementNamed(context, '/signinscreen');
+                }
+              },
+              child: Text("Đăng xuất"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildDrawer(BuildContext context, UserViewModel vm) {
+    final user = vm.user;
+    final displayName = (user?.name?.isNotEmpty == true) ? user!.name : 'Bạn';
+    final avatar =
+        (user?.avatarUrl.isNotEmpty == true) ? user!.avatarUrl : null;
+
+    return Drawer(
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.text, AppColors.text.withOpacity(0.7)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Colors.white.withOpacity(0.3),
+                    backgroundImage:
+                        (avatar != null) ? NetworkImage(avatar) : null,
+                    child:
+                        (avatar == null)
+                            ? const Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 28,
+                            )
+                            : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$displayName',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Chúc bạn một ngày tốt lành!',
+                          style: TextStyle(color: Colors.white70, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Nav items
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.home_outlined),
+                    title: const Text('Trang chủ'),
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.lightbulb_outline),
+                    title: const Text('Gợi ý hôm nay'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      widget.onSelectTab?.call(1);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.bar_chart_outlined),
+                    title: const Text('Thống kê'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      widget.onSelectTab?.call(2);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.camera_alt_outlined),
+                    title: const Text('Camera AI'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      widget.onSelectTab?.call(3);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.person_outline),
+                    title: const Text('Hồ sơ'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      widget.onSelectTab?.call(4);
+                    },
+                  ),
+                  const Divider(),
+                  SwitchListTile(
+                    secondary: const Icon(Icons.dark_mode_outlined),
+                    title: const Text('Chế độ tối'),
+                    value: false,
+                    onChanged: (v) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Demo: bật/tắt chế độ tối'),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  minimumSize: const Size.fromHeight(46),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () => _showLogoutDialog(context),
+                icon: const Icon(Icons.logout, color: Colors.white),
+                label: const Text(
+                  'Đăng xuất',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _enterMultiSelect([DiaryEntry? e]) {
@@ -247,7 +433,14 @@ class _HomePageState extends State<HomePage> {
             appBar: AppBar(
               backgroundColor: AppColors.white,
               elevation: 0,
-              leading: const Icon(Icons.menu, color: Colors.black),
+              leading: Builder(
+                builder:
+                    (ctx) => IconButton(
+                      tooltip: 'Menu',
+                      icon: const Icon(Icons.menu, color: Colors.black),
+                      onPressed: () => Scaffold.of(ctx).openDrawer(),
+                    ),
+              ),
               title: Row(
                 children: [
                   Image.asset(
@@ -352,6 +545,7 @@ class _HomePageState extends State<HomePage> {
                       )
                       : null,
             ),
+            drawer: _buildDrawer(context, vm),
             body:
                 feed.isLoading
                     ? const Center(child: CircularProgressIndicator())
