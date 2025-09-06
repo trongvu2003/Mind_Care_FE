@@ -10,6 +10,8 @@ class SuggestionsViewModel extends ChangeNotifier {
   String? error;
   bool hasToday= false;
   String label = 'Không rõ';
+  String _sentimentRaw = '';
+  bool get isNegative => _sentimentRaw == 'negative';
 
   // % mức độ tích cực hiển thị (0..1)
   double percent = 0.0;
@@ -63,6 +65,7 @@ class SuggestionsViewModel extends ChangeNotifier {
               // Lấy feeling/label
               final selectedFeeling = (m['selectedFeeling'] as String?)?.trim();
               final textSentiment = (m['textSentiment'] as String?)?.trim();
+              _sentimentRaw = (textSentiment ?? '').toLowerCase();
               final textScore =
                   (m['textSentimentScore'] is num)
                       ? (m['textSentimentScore'] as num).toDouble()
